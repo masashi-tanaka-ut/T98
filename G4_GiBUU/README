@@ -1,5 +1,8 @@
 Usege 
 source /usr/local/Geant4-11.1.3-Linux/bin/geant4.sh
+mkdir build
+mkdir output
+mkdir outout/plot
 cd build
 cmake ../code
 sh run.sh 1 1000 1
