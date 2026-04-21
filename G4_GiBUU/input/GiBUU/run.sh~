@@ -1,0 +1,7 @@
+#/bin/bash
+
+mkdir $1
+cd $1
+sed "s/0.03/$2/g" ../001_antiP_Ar_seed1.job > tmp.job
+sed "s/-999.9/0.0/g" tmp.job > job.job
+ ../../GiBUU.x < job.job > log.log

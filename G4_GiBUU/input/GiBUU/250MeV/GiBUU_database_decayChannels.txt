@@ -1,0 +1,75 @@
+ 2-body decay channels of the hadrons
+  i & final State 1 & final State 2 & 1 is stable & 2 is stable & angular momentum & threshold
+
+  1 & pi              & pi              &   T &   T &   0 & 0.276
+  2 & pi              & rho             &   T &   F &   0 & 0.414
+  3 & K               & K~              &   T &   T &   0 & 0.992
+  4 & K               & pi              &   T &   T &   0 & 0.634
+  5 & rho             & gamma           &   F &   T &   0 & 0.276
+  6 & pi              & gamma           &   T &   T &   0 & 0.138
+  7 & gamma           & gamma           &   T &   T &   0 & 0.000
+  8 & gamma           & D_s+            &   T &   T &   0 & 1.969
+  9 & gamma           & D_s-            &   T &   T &   0 & 1.969
+ 10 & pi              & D_s+            &   T &   T &   0 & 2.107
+ 11 & pi              & D_s-            &   T &   T &   0 & 2.107
+ 12 & K~              & pi              &   T &   T &   0 & 0.634
+ 13 & D               & gamma           &   T &   T &   0 & 1.867
+ 14 & D~              & gamma           &   T &   T &   0 & 1.867
+ 15 & pi              & D               &   T &   T &   0 & 2.005
+ 16 & pi              & D~              &   T &   T &   0 & 2.005
+ 17 & pi              & sigma           &   T &   F &   0 & 0.414
+ 18 & eta             & sigma           &   T &   F &   0 & 0.824
+
+  1 & pi              & N               &   T &   T &   0 & 1.076
+  2 & eta             & N               &   T &   T &   0 & 1.486
+  3 & omega           & N               &   T &   T &   0 & 1.721
+  4 & K               & Lambda          &   T &   T &   0 & 1.612
+  5 & pi              & Delta           &   T &   F &   0 & 1.214
+  6 & pi              & Delta           &   T &   F &   1 & 1.214
+  7 & pi              & Delta           &   T &   F &   2 & 1.214
+  8 & pi              & Delta           &   T &   F &   3 & 1.214
+  9 & rho             & N               &   F &   T &   0 & 1.214
+ 10 & rho             & N               &   F &   T &   1 & 1.214
+ 11 & rho             & N               &   F &   T &   2 & 1.214
+ 12 & rho             & N               &   F &   T &   3 & 1.214
+ 13 & sigma           & N               &   F &   T &   0 & 1.214
+ 14 & pi              & P_11(1440)      &   T &   F &   0 & 1.214
+ 15 & rho             & Delta           &   F &   F &   0 & 1.352
+ 16 & rho             & Delta           &   F &   F &   1 & 1.352
+ 17 & rho             & Delta           &   F &   F &   2 & 1.352
+ 18 & rho             & Delta           &   F &   F &   3 & 1.352
+ 19 & pi              & Lambda          &   T &   T &   0 & 1.254
+ 20 & K~              & N               &   T &   T &   0 & 1.434
+ 21 & pi              & Sigma           &   T &   T &   0 & 1.327
+ 22 & pi              & Sigma(1385)     &   T &   F &   0 & 1.392
+ 23 & pi              & Sigma(1385)     &   T &   F &   1 & 1.392
+ 24 & pi              & Sigma(1385)     &   T &   F &   2 & 1.392
+ 25 & pi              & Sigma(1385)     &   T &   F &   3 & 1.392
+ 26 & pi              & Sigma(1385)     &   T &   F &   4 & 1.392
+ 27 & eta             & Lambda          &   T &   T &   0 & 1.664
+ 28 & eta             & Sigma           &   T &   T &   0 & 1.737
+ 29 & K~              & Delta           &   T &   F &   0 & 1.572
+ 30 & K*~             & N               &   F &   T &   0 & 1.572
+ 31 & K*~             & N               &   F &   T &   1 & 1.572
+ 32 & K*~             & N               &   F &   T &   2 & 1.572
+ 33 & K*~             & N               &   F &   T &   3 & 1.572
+ 34 & K*~             & N               &   F &   T &   4 & 1.572
+ 35 & pi              & Lambda(1405)    &   T &   F &   0 & 1.392
+ 36 & pi              & Lambda(1520)    &   T &   F &   0 & 1.392
+ 37 & pi              & Lambda(1520)    &   T &   F &   1 & 1.392
+ 38 & pi              & Lambda(1520)    &   T &   F &   2 & 1.392
+ 39 & pi              & Lambda(1520)    &   T &   F &   3 & 1.392
+ 40 & pi              & Lambda(1520)    &   T &   F &   4 & 1.392
+ 41 & pi              & Lambda(1820)    &   T &   F &   0 & 1.392
+ 42 & omega           & Lambda          &   T &   T &   0 & 1.899
+ 43 & pi              & Xi              &   T &   T &   0 & 1.453
+ 44 & pi              & Lambda_c        &   T &   T &   0 & 2.423
+ 45 & pi              & Xi_c            &   T &   T &   0 & 2.604
+
+ 3-body decay channels of the hadrons
+ i & final State 1 & final State 2 & final State 3 & threshold
+  1 & pi0             & pi0             & eta0            &  & 0.824
+  2 & pi0             & pi-             & pi+             &  & 0.414
+  3 & pi0             & pi0             & pi0             &  & 0.414
+  4 & pi+             & pi-             & eta0            &  & 0.824
+

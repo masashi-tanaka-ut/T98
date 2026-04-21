@@ -1,0 +1,298 @@
+//
+// ********************************************************************
+// * License and Disclaimer                                           *
+// *                                                                  *
+// * The  Geant4 software  is  copyright of the Copyright Holders  of *
+// * the Geant4 Collaboration.  It is provided  under  the terms  and *
+// * conditions of the Geant4 Software License,  included in the file *
+// * LICENSE and available at  http://cern.ch/geant4/license .  These *
+// * include a list of copyright holders.                             *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.  Please see the license in the file  LICENSE  and URL above *
+// * for the full disclaimer and the limitation of liability.         *
+// *                                                                  *
+// * This  code  implementation is the result of  the  scientific and *
+// * technical work of the GEANT4 collaboration.                      *
+// * By using,  copying,  modifying or  distributing the software (or *
+// * any work based  on the software)  you  agree  to acknowledge its *
+// * use  in  resulting  scientific  publications,  and indicate your *
+// * acceptance of all terms of the Geant4 Software license.          *
+// ********************************************************************
+//
+//
+/// \file B4/B4a/src/SteppingAction.cc
+/// \brief Implementation of the B4a::SteppingAction class
+
+#include "SteppingAction.hh"
+#include "EventAction.hh"
+#include "DetectorConstruction.hh"
+
+#include "G4Step.hh"
+#include "G4RunManager.hh"
+#include "G4AnalysisManager.hh"
+#include "G4ios.hh"
+
+#include <vector>
+#include <iostream>
+#include <map>
+#include <fstream>
+
+using namespace B4;
+G4int PreTID;G4String Premat; G4int lastEventID;
+bool CapFlag = false;
+bool injec = false;
+bool stop = false;
+//std::vector<int> ParentID;
+std::map<int,std::pair<int,int>> ParentID;
+std::map<int,std::pair<int,int>> GrandParentID;
+// std::map<int,int> ParentID;
+// std::map<int,int> GrandParentID;
+
+namespace B4a
+{
+
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+SteppingAction::SteppingAction(const DetectorConstruction* detConstruction,
+                               EventAction* eventAction)
+  : fDetConstruction(detConstruction),
+    fEventAction(eventAction)
+{}
+
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void SteppingAction::UserSteppingAction(const G4Step* step)
+{
+  // Collect energy and track length step by step
+  
+   auto analysisManager = G4AnalysisManager::Instance();
+   const G4Event* event =
+     G4RunManager::GetRunManager()->GetCurrentEvent();
+
+  // get volume of the current step
+  auto volume = step->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
+  
+  // energy deposit
+  auto edep = step->GetTotalEnergyDeposit();
+  
+  // step length
+  G4double stepLength = 0.;
+  G4int pid = step->GetTrack()->GetDefinition()->GetPDGEncoding();
+  if ( (step->GetTrack()->GetDefinition()->GetPDGCharge() != 0. && edep>1.0e-6) || (pid==111 || pid==221 || pid==331 || pid==22)) {
+    stepLength = step->GetStepLength();
+    int mat = 0;
+    if (step->GetPreStepPoint()->GetPhysicalVolume()->GetName() == "Detector")  mat = 1;
+    if (step->GetPreStepPoint()->GetPhysicalVolume()->GetName() == "LAr")       mat = 2;
+    if (step->GetPreStepPoint()->GetPhysicalVolume()->GetName() == "Vessel")    mat = 3;
+    analysisManager->FillNtupleIColumn(0,0, fEventAction->Geteventid());
+    analysisManager->FillNtupleIColumn(0,1, step->GetTrack()->GetDefinition()->GetPDGEncoding());
+    analysisManager->FillNtupleDColumn(0,2, (double) step->GetTrack()->GetDefinition()->GetPDGMass());
+    analysisManager->FillNtupleIColumn(0,3, mat);
+    analysisManager->FillNtupleDColumn(0,4, step->GetPreStepPoint()->GetGlobalTime());
+    analysisManager->FillNtupleDColumn(0,5, step->GetPreStepPoint()->GetPosition().x());
+    analysisManager->FillNtupleDColumn(0,6, step->GetPreStepPoint()->GetPosition().y());
+    analysisManager->FillNtupleDColumn(0,7, step->GetPreStepPoint()->GetPosition().z());
+    analysisManager->FillNtupleDColumn(0,8, edep);
+    analysisManager->FillNtupleDColumn(0,9, stepLength);
+    analysisManager->FillNtupleDColumn(0,10, step->GetTrack()->GetMomentumDirection().x());//Direction
+    analysisManager->FillNtupleDColumn(0,11, step->GetTrack()->GetMomentumDirection().y());
+    analysisManager->FillNtupleDColumn(0,12, step->GetTrack()->GetMomentumDirection().z());
+    analysisManager->FillNtupleDColumn(0,13, step->GetTrack()->GetKineticEnergy());//Kinetic Energy
+    analysisManager->FillNtupleDColumn(0,14, step->GetTrack()->GetTrackID());//Track ID
+    analysisManager->FillNtupleDColumn(0,15, step->GetTrack()->GetParentID());//Parent ID
+    analysisManager->FillNtupleDColumn(0,16, GrandParentID[step->GetTrack()->GetTrackID()].first);//GrandParent ID
+    analysisManager->FillNtupleDColumn(0,17, GrandParentID[step->GetTrack()->GetParentID()].first);//Grand2Parent ID
+    analysisManager->FillNtupleDColumn(0,18, ParentID[step->GetTrack()->GetParentID()].second);//Parent PID
+    analysisManager->FillNtupleDColumn(0,19, GrandParentID[step->GetTrack()->GetParentID()].second);//GrandParent PID 
+    analysisManager->FillNtupleDColumn(0,20, GrandParentID[step->GetTrack()->GetParentID()].second);//Grand2Parent PID
+    if(step->GetTrack()->GetTrackStatus() == fStopAndKill||step->GetTrack()->GetTrackStatus() == fStopButAlive){
+      analysisManager->FillNtupleDColumn(0,21,1);
+    }else{
+      analysisManager->FillNtupleDColumn(0,21,0);
+    }
+    analysisManager->AddNtupleRow(0);
+  }
+  G4String Prname = step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
+  G4String Paname = step->GetTrack()->GetDefinition()->GetParticleName();
+  if(step->GetTrack()->GetTrackID()==1&&Prname=="hFritiofCaptureAtRest"&&step->GetPreStepPoint()->GetPhysicalVolume()->GetName() == "Detector"){
+    CapFlag=true;
+  }
+  
+  //Injection Point/ Stopped point
+  if(step->GetTrack()->GetTrackID()==1&&step->GetTrack()->GetTrackStatus() == fStopAndKill){
+    analysisManager->FillNtupleDColumn(2, 0, step->GetPreStepPoint()->GetPosition().x());//Stop
+    analysisManager->FillNtupleDColumn(2, 1, step->GetPreStepPoint()->GetPosition().y());
+    analysisManager->FillNtupleDColumn(2, 2, step->GetPreStepPoint()->GetPosition().z());
+    G4cout << "Stop X : "<< step->GetPreStepPoint()->GetPosition().x() << " Y : "<< step->GetPreStepPoint()->GetPosition().y() << " Z : "<< step->GetPreStepPoint()->GetPosition().z() << G4endl;
+    analysisManager->AddNtupleRow(2);
+  }
+  if(Premat!="Detector"&&step->GetPreStepPoint()->GetPhysicalVolume()->GetName() == "Detector"&&step->GetTrack()->GetTrackID()==1){
+    analysisManager->FillNtupleDColumn(1, 0, step->GetPreStepPoint()->GetPosition().x());//Injec
+    analysisManager->FillNtupleDColumn(1, 1, step->GetPreStepPoint()->GetPosition().y());
+    analysisManager->FillNtupleDColumn(1, 2, step->GetPreStepPoint()->GetPosition().z());
+    G4cout << "Injec X : "<< step->GetPreStepPoint()->GetPosition().x() << " Y : "<< step->GetPreStepPoint()->GetPosition().y() << " Z : "<< step->GetPreStepPoint()->GetPosition().z() << G4endl;
+    analysisManager->AddNtupleRow(1);
+  }else if(Premat!="Detector"&&step->GetTrack()->GetTrackStatus() == fStopAndKill&&step->GetTrack()->GetTrackID()==1){
+    analysisManager->FillNtupleDColumn(1, 0, -300);//Injec
+    analysisManager->FillNtupleDColumn(1, 1, -300);
+    analysisManager->FillNtupleDColumn(1, 2, -300);
+    analysisManager->AddNtupleRow(1);
+    G4cout << " Not Stopped " << G4endl;
+  }
+  
+  G4int trackid = step->GetTrack()->GetTrackID();
+  G4int parentid = step->GetTrack()->GetParentID();
+  G4String MatName  = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
+  G4String PName  =   step->GetTrack()->GetDefinition()->GetParticleName();
+  bool Print = true;
+  //bool Print = false;
+  if(Print){
+    std::ofstream ofs("log/step_log.txt");
+    //comment out check(gamma)
+    
+    if(trackid==1&&step->GetTrack()->GetTrackStatus() == fStopAndKill){
+      ParentID.clear();  GrandParentID.clear();
+    }
+    if(PreTID!=trackid){
+      ParentID[trackid] = std::make_pair(parentid,pid);
+      GrandParentID[trackid] = std::make_pair(ParentID[parentid].first, ParentID[parentid].second);
+    }
+    //comment out check
+    if(step->GetTrack()->GetKineticEnergy()>10&&parentid==1&&PreTID!=trackid&&CapFlag&&MatName =="Detector"){
+      G4cout << "\033[31m"
+	     << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << " Length: " << step->GetStepLength()
+	     << "\033[0m "
+	     <<  G4endl;
+    }
+    //grand particle in Detector
+    if(step->GetTrack()->GetKineticEnergy()>10&&ParentID[parentid].first==1&&step->GetTrack()->GetTrackStatus() == fStopAndKill){
+      //if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&ParentID[parentid].first==1&&MatName == "Detector"){
+      G4cout << "\033[32m"
+	     << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << " Pos: " << step->GetPreStepPoint()->GetPosition()
+	     << " Length: " << step->GetStepLength()
+	     << "\033[0m "
+	     <<  G4endl;
+    }
+
+    //Out of Detector
+    if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&ParentID[parentid].first==1&&MatName != "Detector"){
+      G4cout << "\033[34m"
+	     << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << "  Edepo: "      << edep
+	     << " Length: " << step->GetStepLength()
+	     << "\033[0m "
+	     <<  G4endl;
+    }
+    
+    //electron from gamma 
+    //if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&GrandParentID[parentid].first==1&&MatName != "Detector"){
+    if(step->GetTrack()->GetKineticEnergy()>0.001&&PreTID!=trackid&&GrandParentID[parentid].first==1&&MatName != "Detector"){
+      G4cout << "\033[36m"
+	     << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  GrandParentID2: "<< GrandParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << "  Edepo: "      << edep
+	     << " Length: " << step->GetStepLength()
+	     << "\033[0m "
+	     <<  G4endl;
+    }
+    
+    //Pi+- and gamma check
+    if(parentid!=1&&step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&MatName == "Detector"&&(PName=="gamma"||PName=="pi+"||PName=="pi-"||PName=="pi0"||PName=="e+"||PName=="e-")){
+      G4cout << "\033[37m"
+	     << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << "  Edepo: "      << edep
+	     << " Length: " << step->GetStepLength()
+	     << "\033[0m "
+	     <<  G4endl;
+    }
+  
+    
+    //comment out check by txt
+    G4int eventID = event->GetEventID();
+    if (eventID != lastEventID){
+      ofs      << G4endl;
+      ofs      << " Event : " << event->GetEventID() << G4endl;
+    }
+    if(step->GetTrack()->GetKineticEnergy()>10&&parentid==1&&PreTID!=trackid&&CapFlag&&MatName =="Detector"){
+      ofs    << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << " Length: " << step->GetStepLength()
+	     <<  G4endl;
+    }
+    //grand particle in Detector
+    if(step->GetTrack()->GetKineticEnergy()>10&&ParentID[parentid].first==1&&step->GetTrack()->GetTrackStatus() == fStopAndKill){
+      //if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&ParentID[parentid].first==1&&MatName == "Detector"){
+      ofs    << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << " Pos: " << step->GetPreStepPoint()->GetPosition()
+	     << " Length: " << step->GetStepLength()
+	     <<  G4endl;
+    }
+
+    //Out of Detector
+    if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&ParentID[parentid].first==1&&MatName != "Detector"){
+      ofs    << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << "  Edepo: "      << edep
+	     << " Length: " << step->GetStepLength()
+	     <<  G4endl;
+      if(step->GetTrack()->GetDefinition()->GetParticleName()=="gamma")G4cout << " Parent : " << parentid << G4endl;
+    }
+  
+    //electron from gamma 
+    //if(step->GetTrack()->GetKineticEnergy()>10&&PreTID!=trackid&&GrandParentID[parentid].first==1&&MatName != "Detector"){
+    if(step->GetTrack()->GetKineticEnergy()>0.001&&PreTID!=trackid&&GrandParentID[parentid].first==1&&MatName != "Detector"){
+      ofs    << "PartileName: "<< step->GetTrack()->GetDefinition()->GetParticleName()
+	     << "  TrackID: "  << step->GetTrack()->GetTrackID()
+	     << "  ParentID: " << step->GetTrack()->GetParentID()
+	     << "  GrandParentID: " << ParentID[parentid].first
+	     << "  GrandParentID2: "<< GrandParentID[parentid].first
+	     << "  Energy: "   << step->GetTrack()->GetKineticEnergy() << " MeV"
+	     << "  Edepo: "      << edep
+	     << " Length: " << step->GetStepLength()
+	     <<  G4endl;
+    }
+
+  }
+  
+  PreTID = step->GetTrack()->GetTrackID();
+  Premat = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
+  lastEventID =  event->GetEventID();
+}
+
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+}

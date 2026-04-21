@@ -1,0 +1,28 @@
+# Macro file for example B4 test
+/run/initialize
+#
+# list the existing physics processes
+/process/list
+#
+#
+/control/verbose 0
+/control/verbose 0
+/event/verbose 0
+/run/verbose 0
+/tracking/verbose 0
+
+# change detector parameter
+#/gun/particle proton
+#/gun/particle pi+
+#/gun/particle anti_proton
+# 
+# /gun/position -500 0. -500 mm
+# /gun/direction 1 0 1
+#
+#/gun/position -500 0. 0.  mm
+#/gun/direction 0 0 1
+#
+#/gun/momentumAmp 700 MeV
+#/run/beamOn 100
+#/analysis/setFileName ../output/B4.root
+#/run/beamOn 1000

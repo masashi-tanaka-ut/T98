@@ -1,0 +1,12 @@
+sh run.sh 25MeV 0.025 &
+sh run.sh 50MeV 0.050 &
+sh run.sh 75MeV 0.075 &
+sh run.sh 100MeV 0.100 &
+sh run.sh 125MeV 0.125 &
+sh run.sh 150MeV 0.150 &
+sh run.sh 175MeV 0.175 &
+sh run.sh 200MeV 0.200 &
+sh run.sh 225MeV 0.225 &
+sh run.sh 250MeV 0.250 &
+
+

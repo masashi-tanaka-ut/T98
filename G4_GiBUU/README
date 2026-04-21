@@ -1,0 +1,7 @@
+Usege 
+source /usr/local/Geant4-11.1.3-Linux/bin/geant4.sh
+cd build
+cmake ../code
+sh run.sh 1 1000 1
+root ../output/B4_1.root
+.x plot.C

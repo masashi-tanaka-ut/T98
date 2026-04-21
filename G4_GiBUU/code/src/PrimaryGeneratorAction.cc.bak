@@ -1,0 +1,269 @@
+//
+// ********************************************************************
+// * License and Disclaimer                                           *
+// *                                                                  *
+// * The  Geant4 software  is  copyright of the Copyright Holders  of *
+// * the Geant4 Collaboration.  It is provided  under  the terms  and *
+// * conditions of the Geant4 Software License,  included in the file *
+// * LICENSE and available at  http://cern.ch/geant4/license .  These *
+// * include a list of copyright holders.                             *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.  Please see the license in the file  LICENSE  and URL above *
+// * for the full disclaimer and the limitation of liability.         *
+// *                                                                  *
+// * This  code  implementation is the result of  the  scientific and *
+// * technical work of the GEANT4 collaboration.                      *
+// * By using,  copying,  modifying or  distributing the software (or *
+// * any work based  on the software)  you  agree  to acknowledge its *
+// * use  in  resulting  scientific  publications,  and indicate your *
+// * acceptance of all terms of the Geant4 Software license.          *
+// ********************************************************************
+//
+//
+/// \file B4/B4a/src/PrimaryGeneratorAction.cc
+/// \brief Implementation of the B4::PrimaryGeneratorAction class
+
+#include "PrimaryGeneratorAction.hh"
+
+#include "G4RunManager.hh"
+#include "G4Run.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4LogicalVolume.hh"
+#include "G4Box.hh"
+#include "G4Event.hh"
+#include "G4ParticleGun.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4SystemOfUnits.hh"
+#include "Randomize.hh"
+
+
+//#include <TFile.h>
+#include "TROOT.h"
+#include "TH1.h"
+#include "TFile.h"
+#include "TMath.h"
+#include "TTree.h"
+#include "TVector3.h"
+#include "TRandom3.h"
+#include "TString.h"
+#include <vector>
+
+using CLHEP::deg;
+
+namespace B4
+{
+
+  G4ThreadLocal TH1D* hene1 = nullptr;
+  G4ThreadLocal TString expacsFileName;
+  G4ThreadLocal TFile*fout;
+  G4ThreadLocal TTree*tree;
+  G4ThreadLocal G4double x_pos,y_pos,z_pos,energy;
+  
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+PrimaryGeneratorAction::PrimaryGeneratorAction()
+{
+  G4int nofParticles = 1;
+  fParticleGun = new G4ParticleGun(nofParticles);
+
+  // default particle kinematic
+  //
+  auto particleDefinition
+    = G4ParticleTable::GetParticleTable()->FindParticle("mu+");
+  fParticleGun->SetParticleDefinition(particleDefinition);
+  fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,1.));
+  fParticleGun->SetParticleMomentum(700.*MeV);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+PrimaryGeneratorAction::~PrimaryGeneratorAction()
+{
+  delete fParticleGun;
+}
+
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+  
+  void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
+  {
+
+    TFile*f1;
+    //TString expacsFileName;
+    //TH1D*hene1;
+    TH1D*hang;
+    TRandom3*tr3;
+
+    // This function is called at the begining of event
+
+    // In order to avoid dependence of PrimaryGeneratorAction
+    // on DetectorConstruction class we get world volume
+    // from G4LogicalVolumeStore
+    //
+    G4double worldZHalfLength = 0.;
+    auto worldLV = G4LogicalVolumeStore::GetInstance()->GetVolume("World");
+
+    // Check that the world volume has box shape
+    G4Box* worldBox = nullptr;
+    if (  worldLV ) {
+      worldBox = dynamic_cast<G4Box*>(worldLV->GetSolid());
+    }
+
+    if ( worldBox ) {
+      worldZHalfLength = worldBox->GetZHalfLength();
+    }
+    else  {
+      G4ExceptionDescription msg;
+      msg << "World volume of box shape not found." << G4endl;
+      msg << "Perhaps you have changed geometry." << G4endl;
+      msg << "The gun will be place in the center.";
+      G4Exception("PrimaryGeneratorAction::GeneratePrimaries()",
+		  "MyCode0002", JustWarning, msg);
+    }
+
+    // Set gun position
+    //fParticleGun
+    //  ->SetParticlePosition(G4ThreeVector(0., 0., -worldZHalfLength));
+
+
+    if (0==anEvent->GetEventID()){
+      // G4cout << runAction->GetGunParticle() << G4endl;
+      // G4cout << runAction->GetGunRandSeed() << G4endl;
+      // G4cout << runAction->GetGunNoEvent() << G4endl;
+
+      // fParticleDefinition = G4ParticleTable::GetParticleTable()->FindParticle(runAction->GetGunParticle());
+      // fParticleGun->SetParticleDefinition(fParticleDefinition);
+
+      expacsFileName = Form("data/muon+_JPARC_0km_IntegralFlux.root");
+      delete tr3;
+      tr3=new TRandom3();
+      const long* seeds = CLHEP::HepRandom::getTheSeeds();
+      tr3->SetSeed(seeds[0]);//Error
+      //tr3->SetSeed(PrimarrunAction->GetGunRandSeed());//Error
+
+      G4cout << "Start Seeds : " << seeds[0] << G4endl; 
+
+
+      // EXPACS var2 //
+      f1 = TFile::Open(expacsFileName);
+      f1->Print();
+      hene1 = (TH1D*)f1->Get("hene")->Clone("hene1");
+      hene1->SetDirectory(0);
+      double ene = 0;
+      for(Int_t ibin=0; ibin<hene1->GetXaxis()->GetNbins(); ibin++){
+	ene += hene1->GetBinContent(ibin+1);
+      }
+      hene1->Scale(1./ene);
+      //f1->Close();
+      
+      fout = new TFile("data/out/Data.root","recreate");
+      tree = new TTree("trk","trk");
+      tree -> Branch("x_pos", &x_pos);
+      tree -> Branch("y_pos", &y_pos);
+      tree -> Branch("z_pos", &z_pos);
+      tree -> Branch("energy", &energy);
+    }// if
+    
+    tr3=new TRandom3();
+    const long* seeds = CLHEP::HepRandom::getTheSeeds();
+    tr3->SetSeed(seeds[0]);//Error
+
+    TVector3 vecPos(1.0, 0.0, 0.0);
+    TVector3 vecMom(1.0, 0.0, 0.0);
+
+    // difine energy  
+    double ex=0.2,ey=1,prob=0;
+    int ebin;
+    while(ey > prob){ 
+      ex = tr3->Uniform(0.,1.0);
+      ebin= ex*100+1;
+      ey = tr3->Uniform(0.,1.);  
+      prob = hene1->GetBinContent(ebin);
+    }   
+    
+    //define anglar function 
+
+    int num=ex*100,abin;
+    f1=TFile::Open(expacsFileName);
+    hang = (TH1D*)f1->Get(Form("hang%d",num));
+    double ang = 0;
+    for(Int_t ibin=0; ibin<hang->GetXaxis()->GetNbins(); ibin++){
+      ang += hang->GetBinContent(ibin+1);
+    }
+    hang->Scale(1./ang);  
+
+    double x0,y0,z0;
+    double fancCos=0, y=1,vecMomCos;
+    while(y > fancCos){
+      //generate random position on sphere                        
+      tr3->Sphere(x0,y0,z0,1.);
+      vecPos.SetXYZ(x0,y0,z0);
+    
+      double parTheta=TMath::ACos(TMath::Sqrt(tr3->Uniform()));
+      double parPhi=2.0*TMath::Pi()*tr3->Uniform();
+      vecMom.SetTheta(parTheta);
+      vecMom.SetPhi(parPhi);
+      vecMom.RotateY(vecPos.Theta());
+      vecMom.RotateZ(vecPos.Phi());
+
+      vecMom=-1.0*vecMom;
+
+      y = tr3->Uniform(0.,1.);
+      vecMomCos = TMath::Cos(vecMom.Theta());
+      abin = vecMomCos*10000.+10001;
+      fancCos = hang->GetBinContent(abin);
+    }
+
+    f1->Close();
+    // //Uniform Flux
+    // G4double radius = 30. * cm;
+  
+    // G4double  cosTheta = 2.0 * G4UniformRand() - 1.0;   // [-1,1]
+    // G4double  sinTheta = std::sqrt(1.0 - cosTheta*cosTheta);
+    // G4double  phi      = 2.0 * CLHEP::pi * G4UniformRand();
+  
+    // G4double  x = radius * sinTheta * std::cos(phi);
+    // G4double  y = radius * sinTheta * std::sin(phi);
+    // G4double  z = radius * cosTheta;
+
+
+    // G4ThreeVector pos(x, y, z);
+    // G4ThreeVector dir = (-pos).unit();
+
+    // fParticleGun->SetParticlePosition(pos);
+    // fParticleGun->SetParticleMomentumDirection(dir);  
+    // fParticleGun->GeneratePrimaryVertex(anEvent);
+    // Set gun position
+    G4double radius = 300.;
+    
+    fParticleGun->SetParticlePosition(G4ThreeVector(vecPos[0]*radius*mm,vecPos[1]*radius*mm,vecPos[2]*radius*mm));   
+    fParticleGun->SetParticleMomentumDirection(G4ThreeVector(-1*vecPos[0],-1*vecPos[1],-1*vecPos[2]));  
+    //fParticleGun->SetParticleMomentumDirection(G4ThreeVector(vecMom[0],vecMom[1],vecMom[2]));  
+    G4cout << "Set gun particle\t" << fParticleGun->GetParticleDefinition()->GetParticleName() << G4endl;
+    G4cout << "Set gun position\t" << fParticleGun->GetParticlePosition() <<" Direction\t" << fParticleGun->GetParticleMomentumDirection() << G4endl;
+    fParticleGun->SetParticleEnergy(ex*1000.*MeV);  
+
+    x_pos = vecPos[0];
+    y_pos = vecPos[1];
+    z_pos = vecPos[2];
+    energy = fParticleGun->GetParticleEnergy();
+    G4cout << "X pos : " << x_pos <<  " Y pos : " << y_pos <<  " Z pos : " << z_pos << " Energy : "  << energy << G4endl;
+    tree -> Fill();
+    
+    fParticleGun->GeneratePrimaryVertex(anEvent);
+    G4int  nEvents = G4RunManager::GetRunManager()->GetCurrentRun()->GetNumberOfEventToBeProcessed();
+    //G4cout << "Nevent : " << nEvents << G4endl;
+    if(anEvent->GetEventID()==nEvents-1){
+      G4cout << "Finished Out root file ! " << G4endl;
+      fout -> cd();
+      tree -> Write();
+      fout -> Close();
+    }
+  }
+
+  //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+}
