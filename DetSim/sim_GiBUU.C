@@ -404,7 +404,7 @@ void track2(double startX=0.,
   
   fpar -> GetEntry(pentry);
   for (Long64_t jentry=EntryNumber; jentry<nentries;jentry++) {
-    if(jentry%100==0)cout <<"Entry: " << jentry << endl;
+    if(jentry%1000==0)cout <<"Entry: " << jentry << endl;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
     if(!mode_&&pid==-2212)continue;
     if( (event==0&&trigCounter[0]!=0 ) || (mat==0&&event==0&&pid==0)){
@@ -502,7 +502,7 @@ void track2(double startX=0.,
   }
 }
 
-void sim_GiBUU(int nev, int nmap=100, int file_=0,  int seed=0, const char *fname="sim",int dx=0, int dy=0, int ddd_=1,int mode =0){
+void sim_GiBUU(int nev, int nstart=0 ,int nmap=100, int file_=0,  int seed=0, const char *fname="PBAR",int dx=0, int dy=0, int ddd_=1,int mode =0){
   ddd = ddd_;
   gRandom->SetSeed(seed);
   mode_ = mode; // mode=0:FTF, mode=1: GiBUU
@@ -520,8 +520,8 @@ void sim_GiBUU(int nev, int nmap=100, int file_=0,  int seed=0, const char *fnam
   }
   gSystem->mkdir(outDir, true);
 
-  OutputRootFile = Form("%s/G4_%i_sigma0_x%d_y%d_%d.%s.root",
-                      outDir.Data(), file_, dx, dy, ddd, fname);
+  OutputRootFile = Form("%s/G4_file%i_start%i_ev%i_sigma0_x%d_y%d_%d.%s.root",
+			outDir.Data(), file_,nstart,nev,dx, dy, ddd, fname);
 
 TFile *ofile = new TFile(OutputRootFile,"recreate");
  
@@ -596,8 +596,19 @@ printf("Map data ok\n");
 
   LoadG4RootFile(file_,fname);
   fheader->GetEntry(0);fbeam->GetEntry(0);
-  
-  for (int i=0;i<nev;i++) {
+
+  int jj=-1;
+  int ceve = -1;
+  while(ceve<nstart){
+    jj++;
+    fChain->GetEntry(jj);
+    ceve = event;
+  }
+  EntryNumber = jj;
+  printf("%d %i %i\n",jj,ceve,event);
+
+  trigCounter[0]=nstart;
+  for (int i=nstart;i<nstart+nev;i++) {
     std::cout << "\rEvent " <<i  << "/" << nev << " start" << std::flush;;
     cout << "" << endl;
     // double delta1=gRandom->Gaus(0,10);
