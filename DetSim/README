@@ -1,0 +1,21 @@
+cd DetSim
+cp -r /home/daq/github/mapdata ./
+mkdir output
+root
+
+.L sim_GiBUU.C+
+sim_GiBUU(100,1,1,1,”PBAR”,0,0,1,1)
+　　　　→output/G4_1_sigma0_x0_y0_1.PBAR.rootが生成
+
+.L AddNoiseGiBUU.C+
+AddNoiseGiBUU(1,6,0.53,0,0,1,”PBAR”,1)
+　　　　→output/G4_1_sigma6_x0_y0_53_1.NR.PBAR.rootが生成
+
+.L MakeNoiseGiBUU.C+
+MakeNoiseGiBUU(1,6,0.53,0,0,”PBAR”,1)
+　　　　→output/G4_1_sigma6_x0_y0_53_1.PBAR.rootが生成される
+
+.L ana_sig2.C
+LoadRootFile("output/G4_1_sigma6_x0_y0_53_1.PBAR.root")
+Plot(0)
+
